@@ -6,51 +6,6 @@ import (
 	"time"
 )
 
-func nextWeekday(now time.Time, date time.Time, weeks []int) time.Time {
-
-	//находим ближайший следующий день недели из правила относительно начальной даты
-	var (
-		start, k int
-		shift    bool
-	)
-
-	start = weeks[0]
-	for k = range weeks {
-		if weeks[k] >= int(date.Weekday()) {
-			start = weeks[k]
-			date = date.AddDate(0, 0, start-int(date.Weekday()))
-			if AfterNow(date, now) {
-				return date
-			}
-			shift = true
-			break
-		}
-	}
-	if !shift {
-		date = date.AddDate(0, 0, (7%int(date.Weekday()))+start)
-		k = 0
-		if AfterNow(date, now) {
-			return date
-		}
-	}
-
-	for ; ; k++ {
-		if weeks[k] == weeks[len(weeks)-1] {
-			k = 0
-			date = date.AddDate(0, 0, (7-int(date.Weekday()))+weeks[k])
-			if AfterNow(date, now) {
-				return date
-			}
-			continue
-		}
-		date = date.AddDate(0, 0, weeks[k+1]-weeks[k])
-		if AfterNow(date, now) {
-			return date
-		}
-
-	}
-}
-
 func AfterNow(date time.Time, now time.Time) bool {
 	if date.Truncate(time.Hour * 24).After(now.Truncate(time.Hour * 24)) {
 		return true
@@ -58,15 +13,40 @@ func AfterNow(date time.Time, now time.Time) bool {
 	return false
 }
 
-func forAddDate(date time.Time, now time.Time, y, m, d int) time.Time {
-	for {
-		date = date.AddDate(y, m, d)
-		if AfterNow(date, now) {
-			break
+func nextMonthday(now time.Time, date time.Time, day, month uint32, lastDays [2]bool) time.Time {
+
+	if month == 0 {
+		month--
+	}
+
+	for ; ; date = date.AddDate(0, 0, 1) {
+		var lastDay, preLastDay bool
+		if lastDays[0] {
+			lastDay = date.AddDate(0, 0, 1).Month() != date.Month()
+		}
+		if lastDays[1] {
+			preLastDay = date.AddDate(0, 0, 2).Month() != date.Month()
+		}
+		if (day&(1<<date.Day()) != 0 || lastDay || preLastDay) && (month&(1<<date.Month())) != 0 {
+			if AfterNow(date, now) {
+				return date
+			}
 		}
 	}
-	return date
 }
+
+func nextWeekday(now time.Time, date time.Time, weekDaysMask uint32) time.Time {
+
+	for ; ; date = date.AddDate(0, 0, 1) {
+		if weekDaysMask&(1<<date.Weekday()) != 0 {
+			if AfterNow(date, now) {
+				return date
+			}
+		}
+	}
+
+}
+
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 
 	date, err := time.Parse(DateFormat, dstart)
@@ -76,27 +56,45 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 
 	rule := strings.Split(repeat, " ")
 
-	var years, days int
-
 	switch rule[0] {
 	case "d":
-		if days, err = parseDay(rule); err != nil {
-			return "", err
-		}
-		date = forAddDate(date, now, 0, 0, days)
-	case "y":
-		if years, err = parseYear(rule); err != nil {
-			return "", err
-		}
-		date = forAddDate(date, now, years, 0, 0)
-	case "w":
-		weeks, err := parseWeek(rule)
+		days, err := parseDay(rule)
 		if err != nil {
 			return "", err
 		}
-		date = nextWeekday(now, date, weeks)
+
+		for {
+			date = date.AddDate(0, 0, days)
+			if AfterNow(date, now) {
+				break
+			}
+
+		}
+	case "y":
+		years, err := parseYear(rule)
+		if err != nil {
+			return "", err
+		}
+
+		for {
+			date = date.AddDate(years, 0, 0)
+			if AfterNow(date, now) {
+				break
+			}
+
+		}
+	case "w":
+		weekDaysMask, err := parseWeek(rule)
+		if err != nil {
+			return "", err
+		}
+		date = nextWeekday(now, date, weekDaysMask)
 	case "m":
-		parseMonth(rule)
+		monthDaysMask, monthsMask, lastDays, err := parseMonth(rule)
+		if err != nil {
+			return "", err
+		}
+		date = nextMonthday(now, date, monthDaysMask, monthsMask, lastDays)
 	default:
 		return "", fmt.Errorf("incorrect rule format")
 	}

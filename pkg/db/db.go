@@ -10,16 +10,24 @@ import (
 const (
 	schema = `CREATE TABLE IF NOT EXISTS scheduler (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		date CHAR(8),
+		date CHAR(8) NOT NULL DEFAULT "",
 		title TEXT NOT NULL DEFAULT "",
 		comment TEXT NOT NULL DEFAULT "",
-		repeat VARCHAR(128) 
+		repeat VARCHAR(128) NOT NULL DEFAULT "" 
 	);
 	CREATE INDEX IF NOT EXISTS scheduler_date ON scheduler (date);`
+
+	QueryInsertTask     = "INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?);"
+	QueryById           = "SELECT * FROM scheduler WHERE id = ?;"
+	QueryByDate         = "SELECT * FROM scheduler WHERE date = ? LIMIT ?;"
+	QueryByTitleComment = "SELECT * FROM scheduler WHERE title LIKE ? OR comment LIKE ? ORDER BY date LIMIT ?;"
+	QueryByAllResults   = "SELECT * FROM scheduler ORDER BY date LIMIT ?;"
+	QueryUpdateTask     = "UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?;"
+	QueryUpdateTaskById = "UPDATE scheduler SET date = ? WHERE id = ?;"
+	QueryDeleteTask     = "DELETE FROM scheduler WHERE id = ?;"
 )
 
 func DbConnect(dbFile string) (*sql.DB, error) {
-	var err error
 
 	db, err := sql.Open("sqlite", dbFile)
 	if err != nil {
@@ -27,26 +35,7 @@ func DbConnect(dbFile string) (*sql.DB, error) {
 	}
 
 	if _, err = db.Exec(schema); err != nil {
-		return nil, fmt.Errorf("wew %w", err)
+		return nil, fmt.Errorf("error creating table: %w", err)
 	}
 	return db, nil
-}
-
-func AddTask(db *sql.DB, task *Task) (int64, error) {
-	var id int64
-	query := `INSERT INTO scheduler (date, title, comment, repeat) VALUES 
-				(:date, :title, :comment, :repeat);`
-	res, err := db.Exec(query,
-		sql.Named("date", task.Date),
-		sql.Named("title", task.Title),
-		sql.Named("comment", task.Comment),
-		sql.Named("repeat", task.Repeat))
-	if err != nil {
-		return 0, err
-	}
-	id, err = res.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
 }

@@ -2,31 +2,36 @@ package service
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 )
 
 const (
-	DateFormat = "20060102"
+	DateFormat       = "20060102"
+	DateFormatSearch = "02.01.2006"
 )
 
-func convertSort(values []string, min, max int, entity string) ([]int, error) {
+func convertToMask(values []string, min, max int, entity string) (uint32, error) {
 
-	valuesConverted := make([]int, len(values))
+	var mask uint32
+	for _, v := range values {
 
-	for k, v := range values {
 		num, err := strconv.Atoi(v)
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
+
 		if num < min || num > max {
-			return nil, fmt.Errorf("%s must be between %d and %d", entity, min, max)
+			return 0, fmt.Errorf("%s must be between %d and %d", entity, min, max)
 		}
+
 		switch entity {
 		case "monthday":
-			if num == 0 {
-				return nil, fmt.Errorf("%s cannot be zero", entity)
+			switch num {
+			case 0:
+				return 0, fmt.Errorf("%s cannot be zero", entity)
+			case -1, -2:
+				continue
 			}
 		case "weekday":
 			if num == 7 {
@@ -34,76 +39,82 @@ func convertSort(values []string, min, max int, entity string) ([]int, error) {
 			}
 		}
 
-		valuesConverted[k] = num
-	}
-
-	sort.Ints(valuesConverted)
-
-	for i := 1; i < len(valuesConverted); i++ {
-		if valuesConverted[i] == valuesConverted[i-1] {
-			return nil, fmt.Errorf("redundant value %d", valuesConverted[i])
+		if mask&(1<<num) != 0 {
+			return 0, fmt.Errorf("redundant %s: %d", entity, num)
 		}
+		mask |= 1 << num
 	}
-	return valuesConverted, nil
+
+	return mask, nil
 }
 
-func parseMonth(data []string) ([]int, []int, error) {
+func parseMonth(rule []string) (uint32, uint32, [2]bool, error) {
 
-	if len(data) < 2 || len(data) > 3 {
-		return nil, nil, fmt.Errorf("month may have from ont to two arguments")
+	if len(rule) < 2 || len(rule) > 3 {
+		return 0, 0, [2]bool{}, fmt.Errorf("month rule may have from one up to two arguments")
 	}
 
-	monthDays, err := convertSort(strings.Split(data[1], ","), -2, 31, "monthday")
+	monthdays := strings.Split(rule[1], ",")
+	lastDays := [2]bool{}
+	for _, v := range monthdays {
+		if v == "-1" {
+			lastDays[0] = true
+		}
+		if v == "-2" {
+			lastDays[1] = true
+		}
+	}
+
+	monthDaysMask, err := convertToMask(monthdays, -2, 31, "monthday")
 	if err != nil {
-		return nil, nil, err
+		return 0, 0, [2]bool{}, err
 	}
 
-	if len(data) == 3 {
-		months, err := convertSort(strings.Split(data[2], ","), 1, 12, "month")
+	if len(rule) == 3 {
+		monthsMask, err := convertToMask(strings.Split(rule[2], ","), 1, 12, "month")
 		if err != nil {
-			return nil, nil, err
+			return 0, 0, [2]bool{}, err
 		}
-		return monthDays, months, nil
+		return monthDaysMask, monthsMask, lastDays, nil
 	}
-	return monthDays, nil, nil
+	return monthDaysMask, 0, lastDays, nil
 }
 
-func parseWeek(data []string) ([]int, error) {
+func parseWeek(rule []string) (uint32, error) {
 
-	if len(data) != 2 {
-		return nil, fmt.Errorf("days must have one argument")
+	if len(rule) != 2 {
+		return 0, fmt.Errorf("weeks rule requires one argument")
 	}
 
-	weekDays, err := convertSort(strings.Split(data[1], ","), 1, 7, "weekday")
+	weekDaysMask, err := convertToMask(strings.Split(rule[1], ","), 1, 7, "weekday")
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	return weekDays, nil
+	return weekDaysMask, nil
 }
 
-func parseYear(data []string) (int, error) {
+func parseYear(rule []string) (int, error) {
 
-	if len(data) != 1 {
-		return 0, fmt.Errorf("year requires only a flag")
+	if len(rule) != 1 {
+		return 0, fmt.Errorf("redundant value; year rule requires only a flag")
 	}
 	return 1, nil
 }
 
-func parseDay(data []string) (int, error) {
+func parseDay(rule []string) (int, error) {
 
-	if len(data) != 2 {
-		return 0, fmt.Errorf("days must have one argument")
+	if len(rule) != 2 {
+		return 0, fmt.Errorf("days rule requires one argument")
 	}
 
-	days, err := strconv.Atoi(data[1])
+	days, err := strconv.Atoi(rule[1])
 	if err != nil {
 		return 0, fmt.Errorf("conversion error: %w", err)
 	}
 
 	if days < 1 || days > 400 {
-		return 0, fmt.Errorf("days is out of range (1-400), %d", days)
+		return 0, fmt.Errorf("day is out of range (1-400), %d", days)
 	}
-
 	return days, nil
 }

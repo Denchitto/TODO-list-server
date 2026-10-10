@@ -56,7 +56,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	srv.Lg.Println("Init server")
+	srv.Lg.Printf("Init server on port %s", srv.Srv.Addr)
 
 	dbConn, err := db.DbConnect(path)
 	if err != nil {
@@ -68,13 +68,14 @@ func main() {
 
 	mux, err := api.NewRouter()
 	if err != nil {
-		log.Fatal(err)
+		srv.Lg.Fatal(err)
 	}
 
 	api.Init(mux, srv)
 	srv.Srv.Handler = mux
 
 	if err = srv.Srv.ListenAndServe(); err != nil {
-		fmt.Println(err)
+		srv.Lg.Println(err)
 	}
+	srv.Lg.Println("Have a nice day!")
 }
