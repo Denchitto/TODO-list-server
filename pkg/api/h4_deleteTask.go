@@ -24,12 +24,12 @@ func deleteTaskHandler(srv *server.CustomServer) http.HandlerFunc {
 			return
 		}
 
-		notFound, err := db.DeleteTask(srv.Db, db.QueryDeleteTask, id)
+		count, err := db.DeleteTask(srv.Db, db.QueryDeleteTask, id)
 
 		if err != nil {
 			writeJson(w, err, http.StatusInternalServerError, srv.Lg)
 			return
-		} else if notFound {
+		} else if count == 0 {
 			writeJson(w, fmt.Errorf("incorrect id for deleting task"), http.StatusNotFound, srv.Lg)
 			return
 		}

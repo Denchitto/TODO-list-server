@@ -18,10 +18,10 @@ const (
 	CREATE INDEX IF NOT EXISTS scheduler_date ON scheduler (date);`
 
 	QueryInsertTask     = "INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?);"
-	QueryById           = "SELECT * FROM scheduler WHERE id = ?;"
-	QueryByDate         = "SELECT * FROM scheduler WHERE date = ? LIMIT ?;"
-	QueryByTitleComment = "SELECT * FROM scheduler WHERE title LIKE ? OR comment LIKE ? ORDER BY date LIMIT ?;"
-	QueryByAllResults   = "SELECT * FROM scheduler ORDER BY date LIMIT ?;"
+	QueryById           = "SELECT s.id, s.date, s.title, s.comment, s.repeat FROM scheduler s WHERE s.id = ?;"
+	QueryByDate         = "SELECT s.id, s.date, s.title, s.comment, s.repeat FROM scheduler s WHERE s.date = ? LIMIT ?;"
+	QueryByTitleComment = "SELECT s.id, s.date, s.title, s.comment, s.repeat FROM scheduler s WHERE s.title LIKE ? OR s.comment LIKE ? ORDER BY s.date LIMIT ?;"
+	QueryByAllResults   = "SELECT s.id, s.date, s.title, s.comment, s.repeat FROM scheduler s ORDER BY s.date LIMIT ?;"
 	QueryUpdateTask     = "UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?;"
 	QueryUpdateTaskById = "UPDATE scheduler SET date = ? WHERE id = ?;"
 	QueryDeleteTask     = "DELETE FROM scheduler WHERE id = ?;"
@@ -35,6 +35,7 @@ func DbConnect(dbFile string) (*sql.DB, error) {
 	}
 
 	if _, err = db.Exec(schema); err != nil {
+		db.Close()
 		return nil, fmt.Errorf("error creating table: %w", err)
 	}
 	return db, nil

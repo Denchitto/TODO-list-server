@@ -39,7 +39,7 @@ func editTaskHandler(srv *server.CustomServer) http.HandlerFunc {
 			return
 		}
 
-		notFound, err := db.UpdateTask(srv.Db, db.QueryUpdateTask, task.Date,
+		count, err := db.UpdateTask(srv.Db, db.QueryUpdateTask, task.Date,
 			task.Title,
 			task.Comment,
 			task.Repeat,
@@ -47,7 +47,7 @@ func editTaskHandler(srv *server.CustomServer) http.HandlerFunc {
 		if err != nil {
 			writeJson(w, err, http.StatusInternalServerError, srv.Lg)
 			return
-		} else if notFound {
+		} else if count == 0 {
 			writeJson(w, fmt.Errorf("incorrect id for updating task"), http.StatusNotFound, srv.Lg)
 			return
 		}

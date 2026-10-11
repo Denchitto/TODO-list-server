@@ -1,6 +1,8 @@
 package api
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -66,18 +68,18 @@ func getTaskHandler(srv *server.CustomServer) http.HandlerFunc {
 			return
 		}
 
-		task, err := db.ReadTasks(srv.Db, db.QueryById, []any{id}...)
-		if err != nil {
-			writeJson(w, err, http.StatusInternalServerError, srv.Lg)
+		task, err := db.ReadTask(srv.Db, db.QueryById, []any{id}...)
+		if errors.Is(sql.ErrNoRows, err) {
+			writeJson(w, fmt.Errorf("unable to find task with id: %s", id), http.StatusNotFound, srv.Lg)
 			return
 		}
-		if len(task) == 0 {
-			writeJson(w, fmt.Errorf("unable to find task with id: %s", id), http.StatusNotFound, srv.Lg)
+		if err != nil {
+			writeJson(w, err, http.StatusInternalServerError, srv.Lg)
 			return
 		}
 
 		srv.Lg.Printf("task %s succesfully received", id)
 
-		writeJson(w, task[0], http.StatusOK, srv.Lg)
+		writeJson(w, task, http.StatusOK, srv.Lg)
 	}
 }

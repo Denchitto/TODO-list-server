@@ -21,6 +21,20 @@ func CreateTask(db *sql.DB, query string, args ...any) (int64, error) {
 	return res.LastInsertId()
 }
 
+func ReadTask(db *sql.DB, query string, args ...any) (*Task, error) {
+
+	var newTask Task
+	if err := db.QueryRow(query, args...).Scan(
+		&newTask.ID,
+		&newTask.Date,
+		&newTask.Title,
+		&newTask.Comment,
+		&newTask.Repeat); err != nil {
+		return &Task{}, err
+	}
+	return &newTask, nil
+}
+
 func ReadTasks(db *sql.DB, query string, args ...any) ([]*Task, error) {
 
 	rows, err := db.Query(query, args...)
@@ -34,7 +48,8 @@ func ReadTasks(db *sql.DB, query string, args ...any) ([]*Task, error) {
 	for rows.Next() {
 
 		var newTask Task
-		if err := rows.Scan(&newTask.ID,
+		if err := rows.Scan(
+			&newTask.ID,
 			&newTask.Date,
 			&newTask.Title,
 			&newTask.Comment,
@@ -51,34 +66,20 @@ func ReadTasks(db *sql.DB, query string, args ...any) ([]*Task, error) {
 	return tasks, nil
 }
 
-func UpdateTask(db *sql.DB, query string, args ...any) (bool, error) {
+func UpdateTask(db *sql.DB, query string, args ...any) (int64, error) {
 
 	res, err := db.Exec(query, args...)
 	if err != nil {
-		return false, err
+		return 0, err
 	}
-
-	count, err := res.RowsAffected()
-	if err != nil {
-		return false, err
-	} else if count == 0 {
-		return true, nil
-	}
-	return false, nil
+	return res.RowsAffected()
 }
 
-func DeleteTask(db *sql.DB, query string, args ...any) (bool, error) {
+func DeleteTask(db *sql.DB, query string, args ...any) (int64, error) {
 
 	res, err := db.Exec(query, args...)
 	if err != nil {
-		return false, err
+		return 0, err
 	}
-
-	count, err := res.RowsAffected()
-	if err != nil {
-		return false, err
-	} else if count == 0 {
-		return true, nil
-	}
-	return false, nil
+	return res.RowsAffected()
 }
