@@ -51,7 +51,6 @@ func authorization(lg *log.Logger) http.HandlerFunc {
 		}
 		lg.Println("token created")
 
-		fmt.Println(jwtToken)
 		writeJson(w, map[string]string{"token": jwtToken}, http.StatusOK, lg)
 	}
 }

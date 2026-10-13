@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func writeJson(w http.ResponseWriter, data any, status int, log *log.Logger) {
+func writeJson(w http.ResponseWriter, data any, status int, lg *log.Logger) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
@@ -22,14 +22,14 @@ func writeJson(w http.ResponseWriter, data any, status int, log *log.Logger) {
 	}
 
 	if marshalErr != nil {
-		log.Printf("marshal error: %v", marshalErr)
+		lg.Printf("marshal error: %v", marshalErr)
 		http.Error(w, marshalErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(status)
 	if _, err := w.Write(msg); err != nil {
-		log.Printf("write error: %v", err)
+		lg.Printf("write error: %v", err)
 		return
 	}
 }

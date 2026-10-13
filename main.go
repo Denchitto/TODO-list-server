@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Denchitto/TODO-list-server/pkg/api"
-	"github.com/Denchitto/TODO-list-server/pkg/db"
 	"github.com/Denchitto/TODO-list-server/pkg/server"
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -52,27 +50,11 @@ func main() {
 
 	path := getPath("scheduler.db")
 
-	srv, err := server.NewServer(port)
+	srv, err := server.NewServer(port, path)
 	if err != nil {
 		log.Fatal(err)
 	}
-	srv.Lg.Printf("Init server on port %s", srv.Srv.Addr)
-
-	dbConn, err := db.DbConnect(path)
-	if err != nil {
-		srv.Lg.Fatal(err)
-	}
-	srv.Db = dbConn
 	defer srv.Db.Close()
-	srv.Lg.Println("Init DB")
-
-	mux, err := api.NewRouter()
-	if err != nil {
-		srv.Lg.Fatal(err)
-	}
-
-	api.Init(mux, srv)
-	srv.Srv.Handler = mux
 
 	if err = srv.Srv.ListenAndServe(); err != nil {
 		srv.Lg.Println(err)

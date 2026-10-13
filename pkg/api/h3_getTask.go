@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Denchitto/TODO-list-server/pkg/db"
-	"github.com/Denchitto/TODO-list-server/pkg/server"
 	"github.com/Denchitto/TODO-list-server/pkg/service"
 )
 
@@ -18,7 +18,7 @@ type tasksResp struct {
 	Tasks []*db.Task `json:"tasks"`
 }
 
-func getTasksHandler(srv *server.CustomServer) http.HandlerFunc {
+func getTasksHandler(database *sql.DB, lg *log.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var (
@@ -42,44 +42,44 @@ func getTasksHandler(srv *server.CustomServer) http.HandlerFunc {
 			args = []any{value, value, limit}
 		}
 
-		tasks, err := db.ReadTasks(srv.Db, query, args...)
+		tasks, err := db.ReadTasks(database, query, args...)
 		if err != nil {
-			writeJson(w, err, http.StatusInternalServerError, srv.Lg)
+			writeJson(w, err, http.StatusInternalServerError, lg)
 			return
 		}
 
-		srv.Lg.Println("succefully received list of tasks")
+		lg.Println("succefully received list of tasks")
 
-		writeJson(w, tasksResp{Tasks: tasks}, http.StatusOK, srv.Lg)
+		writeJson(w, tasksResp{Tasks: tasks}, http.StatusOK, lg)
 	}
 }
 
-func getTaskHandler(srv *server.CustomServer) http.HandlerFunc {
+func getTaskHandler(database *sql.DB, lg *log.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		id := r.URL.Query().Get("id")
 
 		if strings.TrimSpace(id) == "" {
-			writeJson(w, fmt.Errorf("id is not specified"), http.StatusBadRequest, srv.Lg)
+			writeJson(w, fmt.Errorf("id is not specified"), http.StatusBadRequest, lg)
 			return
 		}
 		if _, err := strconv.Atoi(id); err != nil {
-			writeJson(w, fmt.Errorf("incorrect id format: %s; %w", id, err), http.StatusBadRequest, srv.Lg)
+			writeJson(w, fmt.Errorf("incorrect id format: %s; %w", id, err), http.StatusBadRequest, lg)
 			return
 		}
 
-		task, err := db.ReadTask(srv.Db, db.QueryById, []any{id}...)
+		task, err := db.ReadTask(database, db.QueryById, []any{id}...)
 		if errors.Is(sql.ErrNoRows, err) {
-			writeJson(w, fmt.Errorf("unable to find task with id: %s", id), http.StatusNotFound, srv.Lg)
+			writeJson(w, fmt.Errorf("unable to find task with id: %s", id), http.StatusNotFound, lg)
 			return
 		}
 		if err != nil {
-			writeJson(w, err, http.StatusInternalServerError, srv.Lg)
+			writeJson(w, err, http.StatusInternalServerError, lg)
 			return
 		}
 
-		srv.Lg.Printf("task %s succesfully received", id)
+		lg.Printf("task %s succesfully received", id)
 
-		writeJson(w, task, http.StatusOK, srv.Lg)
+		writeJson(w, task, http.StatusOK, lg)
 	}
 }

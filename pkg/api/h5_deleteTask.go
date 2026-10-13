@@ -1,41 +1,42 @@
 package api
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/Denchitto/TODO-list-server/pkg/db"
-	"github.com/Denchitto/TODO-list-server/pkg/server"
 )
 
-func deleteTaskHandler(srv *server.CustomServer) http.HandlerFunc {
+func deleteTaskHandler(database *sql.DB, lg *log.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		id := r.URL.Query().Get("id")
 
 		if strings.TrimSpace(id) == "" {
-			writeJson(w, fmt.Errorf("id not specified"), http.StatusBadRequest, srv.Lg)
+			writeJson(w, fmt.Errorf("id not specified"), http.StatusBadRequest, lg)
 			return
 		}
 		if _, err := strconv.Atoi(id); err != nil {
-			writeJson(w, fmt.Errorf("incorrect id format: %s; %w", id, err), http.StatusBadRequest, srv.Lg)
+			writeJson(w, fmt.Errorf("incorrect id format: %s; %w", id, err), http.StatusBadRequest, lg)
 			return
 		}
 
-		count, err := db.DeleteTask(srv.Db, db.QueryDeleteTask, id)
+		count, err := db.DeleteTask(database, db.QueryDeleteTask, id)
 
 		if err != nil {
-			writeJson(w, err, http.StatusInternalServerError, srv.Lg)
+			writeJson(w, err, http.StatusInternalServerError, lg)
 			return
 		} else if count == 0 {
-			writeJson(w, fmt.Errorf("incorrect id for deleting task"), http.StatusNotFound, srv.Lg)
+			writeJson(w, fmt.Errorf("incorrect id for deleting task"), http.StatusNotFound, lg)
 			return
 		}
 
-		srv.Lg.Println("task succesfully deleted")
+		lg.Println("task succesfully deleted")
 
-		writeJson(w, struct{}{}, http.StatusOK, srv.Lg)
+		writeJson(w, struct{}{}, http.StatusOK, lg)
 	}
 }

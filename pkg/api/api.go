@@ -1,15 +1,16 @@
 package api
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-
-	"github.com/Denchitto/TODO-list-server/pkg/server"
 )
 
-func NewRouter() (*http.ServeMux, error) {
+func Init(db *sql.DB, lg *log.Logger) (*http.ServeMux, error) {
+
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, fmt.Errorf("error getting working directory: %w", err)
@@ -18,26 +19,24 @@ func NewRouter() (*http.ServeMux, error) {
 
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.Dir(webDir)))
-	return mux, nil
-}
 
-func Init(mux *http.ServeMux, srv *server.CustomServer) {
-	mux.HandleFunc("/api/signin", authorization(srv.Lg))
-	mux.HandleFunc("/api/nextdate", nextDateHandler(srv.Lg))
-	mux.HandleFunc("/api/tasks", auth(getTasksHandler(srv), srv.Lg))
-	mux.HandleFunc("/api/task/done", auth(completeTaskHandler(srv), srv.Lg))
+	mux.HandleFunc("/api/signin", authorization(lg))
+	mux.HandleFunc("/api/nextdate", nextDateHandler(lg))
+	mux.HandleFunc("/api/tasks", auth(getTasksHandler(db, lg), lg))
+	mux.HandleFunc("/api/task/done", auth(completeTaskHandler(db, lg), lg))
 	mux.HandleFunc("/api/task", auth(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
-			addTaskHandler(srv)(w, r)
+			addTaskHandler(db, lg)(w, r)
 		case http.MethodGet:
-			getTaskHandler(srv)(w, r)
+			getTaskHandler(db, lg)(w, r)
 		case http.MethodPut:
-			editTaskHandler(srv)(w, r)
+			editTaskHandler(db, lg)(w, r)
 		case http.MethodDelete:
-			deleteTaskHandler(srv)(w, r)
+			deleteTaskHandler(db, lg)(w, r)
 		default:
-			srv.Lg.Printf("method not supported: %s", r.Method)
+			lg.Printf("method not supported: %s", r.Method)
 		}
-	}, srv.Lg))
+	}, lg))
+	return mux, nil
 }
