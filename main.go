@@ -11,6 +11,7 @@ import (
 	"github.com/Denchitto/TODO-list-server/pkg/api"
 	"github.com/Denchitto/TODO-list-server/pkg/db"
 	"github.com/Denchitto/TODO-list-server/pkg/server"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func getPort() (string, error) {
@@ -29,7 +30,7 @@ func getPort() (string, error) {
 	if num < 0 || num > 65535 {
 		return "", fmt.Errorf("port value %d is out of range", num)
 	}
-	return strconv.Itoa(num), nil
+	return port, nil
 }
 
 func getPath(dbName string) string {
@@ -39,7 +40,6 @@ func getPath(dbName string) string {
 		log.Println("Setting current directory for DB as default")
 		return dbName
 	}
-
 	return filepath.Join(filepath.Clean(path), dbName)
 }
 
@@ -77,5 +77,4 @@ func main() {
 	if err = srv.Srv.ListenAndServe(); err != nil {
 		srv.Lg.Println(err)
 	}
-	srv.Lg.Println("Have a nice day!")
 }

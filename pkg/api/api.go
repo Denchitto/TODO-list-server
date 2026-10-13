@@ -22,10 +22,11 @@ func NewRouter() (*http.ServeMux, error) {
 }
 
 func Init(mux *http.ServeMux, srv *server.CustomServer) {
+	mux.HandleFunc("/api/signin", authorization(srv.Lg))
 	mux.HandleFunc("/api/nextdate", nextDateHandler(srv.Lg))
-	mux.HandleFunc("/api/tasks", getTasksHandler(srv))
-	mux.HandleFunc("/api/task/done", completeTaskHandler(srv))
-	mux.HandleFunc("/api/task", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/tasks", auth(getTasksHandler(srv), srv.Lg))
+	mux.HandleFunc("/api/task/done", auth(completeTaskHandler(srv), srv.Lg))
+	mux.HandleFunc("/api/task", auth(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
 			addTaskHandler(srv)(w, r)
@@ -38,5 +39,5 @@ func Init(mux *http.ServeMux, srv *server.CustomServer) {
 		default:
 			srv.Lg.Printf("method not supported: %s", r.Method)
 		}
-	})
+	}, srv.Lg))
 }
