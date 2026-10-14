@@ -1,0 +1,9 @@
+services:
+  server:
+    build: .
+    ports:
+      - 7540:${TODO_PORT} ## Если TODO_PORT не указан в .env - подставить в поле ports значение: - 7540:7540
+    env_file:
+    - .env
+    volumes:
+      - ${TODO_DBFILE}:/app/scheduler.db  ## Если TODO_DBFILE не указан в .env - подставить в поле volumes значение: - ./scheduler.db:/app/scheduler.db

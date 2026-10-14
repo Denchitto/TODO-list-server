@@ -12,7 +12,12 @@ const (
 )
 
 func convertToMask(values []string, min, max int, entity string) (uint32, error) {
-
+	// Так как у нас дни недели и месяца - уникальные значения, мы создаем маску
+	// и присваиваем каждой позиции соответствующий день. Например 31 20 1
+	// 10000000000000000000000000000000 - 31
+	// 00000000000100000000000000000000 - 20
+	// 00000000000000000000000000000010 - 1
+	// 10000000000100000000000000000010 - 31 | 20 | 1
 	var mask uint32
 	for _, v := range values {
 
@@ -38,7 +43,7 @@ func convertToMask(values []string, min, max int, entity string) (uint32, error)
 				num = 0
 			}
 		}
-
+		// Проверяем что на позиции num в маске пусто, если значение уже записано возвращаем ошибку об избыточности
 		if mask&(1<<num) != 0 {
 			return 0, fmt.Errorf("redundant %s: %d", entity, num)
 		}

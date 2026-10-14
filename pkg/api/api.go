@@ -19,7 +19,7 @@ func Init(db *sql.DB, lg *log.Logger) (*http.ServeMux, error) {
 
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.Dir(webDir)))
-
+	// Прокидываем логгер и бд в хендлеры
 	mux.HandleFunc("/api/signin", authorization(lg))
 	mux.HandleFunc("/api/nextdate", nextDateHandler(lg))
 	mux.HandleFunc("/api/tasks", auth(getTasksHandler(db, lg), lg))

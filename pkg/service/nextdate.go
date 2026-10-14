@@ -7,6 +7,7 @@ import (
 )
 
 func AfterNow(date time.Time, now time.Time) bool {
+
 	if date.Truncate(time.Hour * 24).After(now.Truncate(time.Hour * 24)) {
 		return true
 	}
@@ -14,7 +15,7 @@ func AfterNow(date time.Time, now time.Time) bool {
 }
 
 func nextMonthday(now time.Time, date time.Time, day, month uint32, lastDays [2]bool) time.Time {
-
+	// Если месяцев нет, выставляем всю маску месяца на единицы
 	if month == 0 {
 		month--
 	}
@@ -27,6 +28,7 @@ func nextMonthday(now time.Time, date time.Time, day, month uint32, lastDays [2]
 		if lastDays[1] {
 			preLastDay = date.AddDate(0, 0, 2).Month() != date.Month()
 		}
+		// Побитово сравниваем маску и текущий день, либо если у нас текущий день последний или предпоследний
 		if (day&(1<<date.Day()) != 0 || lastDay || preLastDay) && (month&(1<<date.Month())) != 0 {
 			if AfterNow(date, now) {
 				return date
