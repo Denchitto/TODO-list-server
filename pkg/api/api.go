@@ -35,7 +35,8 @@ func Init(db *sql.DB, lg *log.Logger) (*http.ServeMux, error) {
 		case http.MethodDelete:
 			deleteTaskHandler(db, lg)(w, r)
 		default:
-			lg.Printf("method not supported: %s", r.Method)
+			lg.Printf("method not allowed: %s", r.Method)
+			writeJson(w, fmt.Errorf("method not allowed"), http.StatusMethodNotAllowed, lg)
 		}
 	}, lg))
 	return mux, nil

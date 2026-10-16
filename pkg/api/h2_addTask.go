@@ -23,32 +23,29 @@ func checkDate(task *db.Task) error {
 
 	now := time.Now()
 
-	switch {
-
-	case strings.TrimSpace(task.Date) == "":
+	if strings.TrimSpace(task.Date) == "" {
 		task.Date = now.Format(service.DateFormat)
+		return nil
+	}
 
-	default:
-		parsedDate, err := time.Parse(service.DateFormat, task.Date)
+	parsedDate, err := time.Parse(service.DateFormat, task.Date)
+	if err != nil {
+		return err
+	}
+
+	if service.AfterNow(now, parsedDate) {
+
+		if strings.TrimSpace(task.Repeat) == "" {
+			task.Date = now.Format(service.DateFormat)
+			return nil
+		}
+		task.Date, err = service.NextDate(now, task.Date, task.Repeat)
 		if err != nil {
 			return err
 		}
 
-		if service.AfterNow(now, parsedDate) {
-
-			switch {
-
-			case strings.TrimSpace(task.Repeat) == "":
-				task.Date = now.Format(service.DateFormat)
-
-			default:
-				task.Date, err = service.NextDate(now, task.Date, task.Repeat)
-				if err != nil {
-					return err
-				}
-			}
-		}
 	}
+
 	return nil
 }
 
@@ -80,13 +77,14 @@ func addTaskHandler(database *sql.DB, lg *log.Logger) http.HandlerFunc {
 			return
 		}
 
-		id, err := db.CreateTask(database, db.QueryInsertTask,
+		id, err := db.CreateTask(database,
 			task.Date,
 			task.Title,
 			task.Comment,
 			task.Repeat)
 		if err != nil {
-			writeJson(w, err, http.StatusBadRequest, lg)
+			lg.Println(err)
+			writeJson(w, fmt.Errorf("internal error"), http.StatusInternalServerError, lg)
 			return
 		}
 

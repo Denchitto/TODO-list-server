@@ -25,10 +25,11 @@ func deleteTaskHandler(database *sql.DB, lg *log.Logger) http.HandlerFunc {
 			return
 		}
 		// 2. Удаляем запись, проверяем что запись удалилась
-		count, err := db.DeleteTask(database, db.QueryDeleteTask, id)
+		count, err := db.DeleteTask(database, id)
 
 		if err != nil {
-			writeJson(w, err, http.StatusInternalServerError, lg)
+			lg.Println(err)
+			writeJson(w, fmt.Errorf("internal error"), http.StatusInternalServerError, lg)
 			return
 		} else if count == 0 {
 			writeJson(w, fmt.Errorf("incorrect id for deleting task"), http.StatusNotFound, lg)

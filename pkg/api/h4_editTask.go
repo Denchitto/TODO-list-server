@@ -40,13 +40,15 @@ func editTaskHandler(database *sql.DB, lg *log.Logger) http.HandlerFunc {
 			return
 		}
 
-		count, err := db.UpdateTask(database, db.QueryUpdateTask, task.Date,
+		count, err := db.UpdateTask(database,
+			task.Date,
 			task.Title,
 			task.Comment,
 			task.Repeat,
 			task.ID)
 		if err != nil {
-			writeJson(w, err, http.StatusInternalServerError, lg)
+			lg.Println(err)
+			writeJson(w, fmt.Errorf("internal error"), http.StatusInternalServerError, lg)
 			return
 		} else if count == 0 {
 			writeJson(w, fmt.Errorf("incorrect id for updating task"), http.StatusNotFound, lg)

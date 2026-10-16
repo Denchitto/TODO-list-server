@@ -17,14 +17,14 @@ const (
 	);
 	CREATE INDEX IF NOT EXISTS scheduler_date ON scheduler (date);`
 
-	QueryInsertTask     = "INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?);"
-	QueryById           = "SELECT s.id, s.date, s.title, s.comment, s.repeat FROM scheduler s WHERE s.id = ?;"
-	QueryByDate         = "SELECT s.id, s.date, s.title, s.comment, s.repeat FROM scheduler s WHERE s.date = ? LIMIT ?;"
-	QueryByTitleComment = "SELECT s.id, s.date, s.title, s.comment, s.repeat FROM scheduler s WHERE s.title LIKE ? OR s.comment LIKE ? ORDER BY s.date LIMIT ?;"
-	QueryByAllResults   = "SELECT s.id, s.date, s.title, s.comment, s.repeat FROM scheduler s ORDER BY s.date LIMIT ?;"
-	QueryUpdateTask     = "UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?;"
-	QueryUpdateTaskById = "UPDATE scheduler SET date = ? WHERE id = ?;"
-	QueryDeleteTask     = "DELETE FROM scheduler WHERE id = ?;"
+	queryInsertTask       = "INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?);"
+	queryById             = "SELECT s.id, s.date, s.title, s.comment, s.repeat FROM scheduler s WHERE s.id = ?;"
+	queryByDate           = "SELECT s.id, s.date, s.title, s.comment, s.repeat FROM scheduler s WHERE s.date = ? LIMIT ?;"
+	queryByTitleComment   = "SELECT s.id, s.date, s.title, s.comment, s.repeat FROM scheduler s WHERE s.title LIKE ? OR s.comment LIKE ? ORDER BY s.date LIMIT ?;"
+	queryByAllResults     = "SELECT s.id, s.date, s.title, s.comment, s.repeat FROM scheduler s ORDER BY s.date LIMIT ?;"
+	queryUpdateTask       = "UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?;"
+	queryUpdateTaskByDate = "UPDATE scheduler SET date = ? WHERE id = ?;"
+	queryDeleteTask       = "DELETE FROM scheduler WHERE id = ?;"
 )
 
 func DbConnect(dbFile string) (*sql.DB, error) {

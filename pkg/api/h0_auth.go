@@ -58,21 +58,23 @@ func auth(next http.HandlerFunc, lg *log.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		pas := os.Getenv("TODO_PASSWORD")
-		if len(pas) > 0 {
-			cookie, err := r.Cookie("token")
-			if err != nil {
-				lg.Printf("cookie error: %v", err)
-				http.Error(w, "cookie error "+err.Error(), http.StatusUnauthorized)
-				return
-			}
-
-			if err = tokenValidation(cookie.Value); err != nil {
-				lg.Printf("failed validation: %v", err)
-				http.Error(w, err.Error(), http.StatusUnauthorized)
-				return
-			}
-			lg.Println("successful validation")
+		if len(pas) == 0 {
+			next(w, r)
+			return
 		}
+		cookie, err := r.Cookie("token")
+		if err != nil {
+			lg.Printf("cookie error: %v", err)
+			http.Error(w, "cookie error "+err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		if err = tokenValidation(cookie.Value); err != nil {
+			lg.Printf("failed validation: %v", err)
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		lg.Println("successful validation")
 		next(w, r)
 	}
 }

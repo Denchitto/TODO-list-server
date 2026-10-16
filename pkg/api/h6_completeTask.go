@@ -27,19 +27,21 @@ func completeTaskHandler(database *sql.DB, lg *log.Logger) http.HandlerFunc {
 			return
 		}
 		// 2. Ищем задачу по id, проверяем, что id найден, других ошибок нет
-		task, err := db.ReadTask(database, db.QueryById, id)
+		task, err := db.ReadTask(database, id)
 		if errors.Is(sql.ErrNoRows, err) {
 			writeJson(w, fmt.Errorf("unable to find task with id: %s", id), http.StatusNotFound, lg)
 			return
 		}
 		if err != nil {
-			writeJson(w, err, http.StatusInternalServerError, lg)
+			lg.Println(err)
+			writeJson(w, fmt.Errorf("internal error"), http.StatusInternalServerError, lg)
 			return
 		}
 		// 3. Удаляем задачу если повтора нет
 		if strings.TrimSpace(task.Repeat) == "" {
-			if _, err := db.DeleteTask(database, db.QueryDeleteTask, task.ID); err != nil {
-				writeJson(w, err, http.StatusInternalServerError, lg)
+			if _, err := db.DeleteTask(database, task.ID); err != nil {
+				lg.Println(err)
+				writeJson(w, fmt.Errorf("internal error"), http.StatusInternalServerError, lg)
 				return
 			}
 
@@ -53,8 +55,9 @@ func completeTaskHandler(database *sql.DB, lg *log.Logger) http.HandlerFunc {
 				writeJson(w, err, http.StatusInternalServerError, lg)
 				return
 			}
-			if _, err = db.UpdateTask(database, db.QueryUpdateTaskById, task.Date, task.ID); err != nil {
-				writeJson(w, err, http.StatusInternalServerError, lg)
+			if _, err = db.UpdateDate(database, task.Date, task.ID); err != nil {
+				lg.Println(err)
+				writeJson(w, fmt.Errorf("internal error"), http.StatusInternalServerError, lg)
 				return
 			}
 
